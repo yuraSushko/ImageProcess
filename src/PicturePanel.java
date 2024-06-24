@@ -1,14 +1,13 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-public class PicturePanel extends JPanel implements ActionListener {
+public class PicturePanel extends JPanel implements ActionListener , MouseListener {
     private BufferedImage image; // change to orgImage; add private BufferedImage image
     private JComboBox<String> comboBox;
     private BufferedImage imageWithFilter;
@@ -24,10 +23,14 @@ public class PicturePanel extends JPanel implements ActionListener {
         setPictureTodisplay(image);
         setComboBoxg();
         locationsCliked = new ArrayList<>();
-        this.minBorderX=100;
+
+        this.minBorderX=0;
         this.minBorderY=0;
-        this.maxBorderX=this.image.getWidth()-100;
+        this.maxBorderX=this.image.getWidth();
         this.maxBorderY=this.image.getHeight();
+        createResetBorderButton();
+        this.addMouseListener(this);
+        printSize();
     }
 
     public void paintComponent(Graphics g) {
@@ -36,50 +39,83 @@ public class PicturePanel extends JPanel implements ActionListener {
         g.fillRect(0, 0, this.getWidth(), this.getHeight());
         g.drawImage(this.imageWithFilter, 100, 0, this.getWidth() - 100, this.getHeight(), this);
 
+        g.setColor(Color.ORANGE);
+        for (PixelPoint pixel :locationsCliked ){
+            g.fillOval(pixel.getX()+100,pixel.getY(), 10,10);
+        }
 
+
+    }
+
+    private void printSize(){
+       new Thread(()->{
+
+           while (true){
+               System.out.println("image " +this.image.getHeight() + ", "+ this.image.getWidth());
+
+               System.out.println("filter " +this.imageWithFilter.getHeight() + ", "+ this.imageWithFilter.getWidth());
+               try {
+                   Thread.sleep(3000);
+               } catch (InterruptedException e) {
+                   throw new RuntimeException(e);
+               }
+           }
+
+       } ).start();
     }
 
     public void addLocationsCliked(int xPixel,int yPixel){
         if (this.locationsCliked.size()<Constans.NUMBER_OF_BORDERS_TO_CLICK){
+
             this.locationsCliked.add(new PixelPoint(xPixel-100,yPixel));
+
         }
     }
 
-    public void zerorizeLocationsCliked(int xPixel,int yPixel){
+    public void resetLocationsCliked(){
         this.locationsCliked.clear();
     }
+    public void createResetBorderButton(){
+        this.resetBox = new JButton("Reset Filter Border");
+        this.resetBox.setBounds(0,0  , 100,50);
+        this.resetBox.setVisible(true);
+        this.resetBox.addActionListener(this);
+        this.add(resetBox);
 
-
-/*
-    public boolean withinBoundsGross(int currX, int currY) {
-        boolean within=false;
-        if(minBorderX<=currX && maxBorderX>=currX){
-            if(minBorderY<=currY && maxBorderY>=currY){
-                within=true;
-            }
-        }
-    return within;
     }
-  */
+
     public void setMaxMinBorderBoundsForFilter(){
         if (this.locationsCliked.size()==Constans.NUMBER_OF_BORDERS_TO_CLICK){
             int[] arrPixelPartX= new int[Constans.NUMBER_OF_BORDERS_TO_CLICK];
             int[] arrPixelPartY= new int[Constans.NUMBER_OF_BORDERS_TO_CLICK];
+            // better to do at final check in filter aply but is expensive
+            double panelWidth= this.getWidth(), panelHight=this.getHeight() ;
             for (int i = 0; i < Constans.NUMBER_OF_BORDERS_TO_CLICK; i++) {
-                arrPixelPartY[i]=locationsCliked.get(i).getY();
-                arrPixelPartX[i]=locationsCliked.get(i).getX();
+                double xPixel =locationsCliked.get(i).getX();
+                double yPixel =locationsCliked.get(i).getY();
+                double percentX =( (xPixel) / (panelWidth-100)  );//-100
+                double percentY = yPixel / panelHight;//-100
+                int xAtPicture= (int) (percentX*this.image.getWidth());
+                int yAtPicture= (int) (percentY*this.image.getHeight());
+                arrPixelPartY[i]=yAtPicture;
+                arrPixelPartX[i]=xAtPicture;
+                //arrPixelPartY[i]=locationsCliked.get(i).getY();
+               // arrPixelPartX[i]=locationsCliked.get(i).getX();
             }
             this.minBorderX=findMin(arrPixelPartX);
+            System.out.println(minBorderX + " minBorderX");
             this.minBorderY=findMin(arrPixelPartY);
+            System.out.println(minBorderY + " minBorderY");
             this.maxBorderX=findMax(arrPixelPartX);
+            System.out.println(maxBorderX + " maxBorderX");
             this.maxBorderY=findMax(arrPixelPartY);
+            System.out.println(maxBorderY + " maxBorderY");
 
         }
     }
 
     public boolean withinBoundsPerPixel(int currX, int currY){
         boolean within = false;
-
             if(minBorderX<=currX && maxBorderX>=currX){
                 if(minBorderY<=currY && maxBorderY>=currY){
                     within=true;
@@ -127,6 +163,17 @@ public class PicturePanel extends JPanel implements ActionListener {
 
 
     public void actionPerformed(ActionEvent e) {
+
+        try {
+
+
+            if( ((JButton) e.getSource() ).getText().equals("Reset Filter Border") ){
+                resetLocationsCliked();
+            }
+        } catch (Exception ex) {
+
+        }
+
 
         String currFilter = comboBox.getSelectedItem().toString();
         System.out.println(currFilter + " curr selected");
@@ -189,21 +236,23 @@ public class PicturePanel extends JPanel implements ActionListener {
     public void setComboBoxg() {
         this.comboBox = new JComboBox<>(Constans.PICTURE_FILTER_OPTIONS);
         this.setLayout(null);
-        this.comboBox.setBounds(0, 0, 100, 50);
+        this.comboBox.setBounds(0, 55, 100, 50);
         this.comboBox.addActionListener(this);
         this.add(comboBox);
     }
 
 
     public BufferedImage negative() {
-        for (int x = 0; x < image.getWidth(); x++) {
-            for (int y = 0; y < image.getHeight(); y++) {
-                Color currentColor = new Color(image.getRGB(x, y));
-                int red = 255 - currentColor.getRed();
-                int green = 255 - currentColor.getGreen();
-                int blue = 255 - currentColor.getBlue();
-                Color newColor = new Color(red, green, blue);
-                imageWithFilter.setRGB(x, y, newColor.getRGB());
+        for (int x = 0; x < imageWithFilter.getWidth(); x++) {
+            for (int y = 0; y < imageWithFilter.getHeight(); y++) {
+                if(withinBoundsPerPixel(x,y)) {
+                    Color currentColor = new Color(imageWithFilter.getRGB(x, y));
+                    int red = 255 - currentColor.getRed();
+                    int green = 255 - currentColor.getGreen();
+                    int blue = 255 - currentColor.getBlue();
+                    Color newColor = new Color(red, green, blue);
+                    imageWithFilter.setRGB(x, y, newColor.getRGB());
+                }
             }
         }
         return imageWithFilter;
@@ -435,62 +484,41 @@ public class PicturePanel extends JPanel implements ActionListener {
         return imageWithNoiseAndSepia;
     }
 
-
-        //    public BufferedImage mirrorHorizontal() {
-//
-//        for (int x = 0; x < image.getWidth(); x++) {
-//            for (int y = 0; y < image.getHeight(); y++) {
-//                int mirroredX = imageWithFilter.getWidth()- x - 1;
-//                imageWithFilter.setRGB(mirroredX, y, imageWithFilter.getRGB(x, y));
-//            }
-//        }
-//        return imageWithFilter;
-//    }
+    @Override
+    public void mouseClicked(MouseEvent e) {
 
 
-//    private  String selectedFile;
-//    private BufferedImage image;
-//    private Image scaledImage;
-//
-//    public PicturePanel(){
-//        fileChooser();
-//    }
-//    @Override
-//    protected void paintComponent(Graphics g) {
-//        super.paintComponent(g);
-//        g.drawImage(this.scaledImage, 0,0,this.getWidth(),this.getHeight(),this);
-//
-//    }
-//
-//    private void fileChooser() {
-//        JFileChooser fileChooser = new JFileChooser();
-//        int returnValue = fileChooser.showOpenDialog(null);
-//        if (returnValue == JFileChooser.APPROVE_OPTION) {
-//            this.selectedFile =fileChooser.getSelectedFile().getAbsolutePath();
-//            System.out.println(selectedFile);
-//
-//        }
-//
-//        try {
-//            image = ImageIO.read(new File( selectedFile) );
-//            System.out.println(image);
-//            scaledImage = image;
-//
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
-//        this.addComponentListener(new ComponentAdapter() {
-//            @Override
-//            public void componentResized(ComponentEvent e) {
-//                int width = getWidth();
-//                int height = getHeight();
-//                scaledImage = image.getScaledInstance(width, height, Image.SCALE_SMOOTH);
-//                repaint();
-//            }
-//        });
-//
-//
-//    }
+        int clickedX=e.getX() ,clickedY= e.getY();
+        if(clickedX>=100) {
+            addLocationsCliked(clickedX,clickedY );
+        }
+        System.out.println(this.locationsCliked);
+        setMaxMinBorderBoundsForFilter();
+
+        repaint();
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+
+    }
+
+
 
 
 

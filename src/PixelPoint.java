@@ -14,4 +14,12 @@ public class PixelPoint {
     public int getY() {
         return y;
     }
+
+    @Override
+    public String toString() {
+        return "PixelPoint{" +
+                "x=" + x +
+                ", y=" + y +
+                '}';
+    }
 }

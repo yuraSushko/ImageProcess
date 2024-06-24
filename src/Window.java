@@ -7,7 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 public class Window extends JFrame {
-    private PicturePanel picturePanel;
+    private PicturePanel displayImage;
     private ComboBoxPanel comboBoxPanel;
     public Window(){
         fileChooser();
@@ -36,10 +36,10 @@ public class Window extends JFrame {
             if (returnValue == JFileChooser.APPROVE_OPTION) {
                 File file = new File(fileChooser.getSelectedFile().getAbsolutePath());
                 BufferedImage image = ImageIO.read(file);
-                PicturePanel displayImage = new PicturePanel(image);
+                 displayImage = new PicturePanel(image);
 
                 this.add(displayImage);
-                this.setSize(600, 400);
+                this.setSize(displayImage.getWidth(), displayImage.getHeight());
                 this.setLocationRelativeTo(null);
                 this.setDefaultCloseOperation(EXIT_ON_CLOSE);
                 this.setVisible(true);
