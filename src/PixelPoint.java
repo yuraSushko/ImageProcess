@@ -1,4 +1,4 @@
-public class PixelPoint {
+public class PixelPoint implements Comparable<PixelPoint> {
     private int x;
     private int y;
 
@@ -15,11 +15,24 @@ public class PixelPoint {
         return y;
     }
 
+    public void setX(int x) {
+        this.x = x;
+    }
+
+    public void setY(int y) {
+        this.y = y;
+    }
+
     @Override
     public String toString() {
         return "PixelPoint{" +
                 "x=" + x +
                 ", y=" + y +
                 '}';
+    }
+
+    @Override
+    public int compareTo(PixelPoint other) {
+        return 0;
     }
 }
