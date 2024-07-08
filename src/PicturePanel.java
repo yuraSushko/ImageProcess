@@ -316,7 +316,7 @@ public class PicturePanel extends JPanel implements ActionListener ,  MouseMotio
 
 
     public BufferedImage pixelate() {
-        int blockSize=5;
+        int blockSize=10;
         for (int y = 0; y < image.getHeight(); y += blockSize) {
             for (int x = 0; x < image.getWidth(); x += blockSize) {
                 if(withinBoundsPerPixel(x)) {
@@ -433,8 +433,8 @@ public class PicturePanel extends JPanel implements ActionListener ,  MouseMotio
     }
 
     public BufferedImage vintage(){
-        this.imageWithFilter = sepia();
-        BufferedImage imageWithNoiseAndSepia=addNoise();
+        this.imageWithFilter = addNoise();
+        BufferedImage imageWithNoiseAndSepia=sepia();
         return imageWithNoiseAndSepia;
     }
 
